@@ -1,0 +1,38 @@
+<Window x:Class="ThorFlasher.UI.Views.ProfileNameDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Save Environment"
+        Width="420"
+        Height="170"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Profile Name" />
+        <TextBox Grid.Row="1"
+                 Margin="0,8,0,0"
+                 Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock Grid.Row="2"
+                   Margin="0,10,0,0"
+                   Foreground="#666666"
+                   Text="Save the current host, target, selected file path, and detected operation." />
+
+        <StackPanel Grid.Row="3"
+                    Margin="0,16,0,0"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Click="SaveButton_Click"
+                    Content="Save"
+                    IsDefault="True" />
+            <Button Margin="0,0,0,0"
+                    Content="Cancel"
+                    IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>

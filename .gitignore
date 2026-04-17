@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+TestResults/
+artifacts/
+.appdata/
+.dotnet/
+.dotnet-cli/
+.localappdata/
+.nuget/
+restore*.log
+thor-*.log
