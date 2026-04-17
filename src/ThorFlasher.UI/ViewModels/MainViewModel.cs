@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text;
 using ThorFlasher.Core.Interfaces;
 using ThorFlasher.Core.Models;
 using ThorFlasher.Core.Services;
@@ -12,52 +13,60 @@ public sealed class MainViewModel : ViewModelBase
 {
     private readonly FileTypeResolver _fileTypeResolver;
     private readonly InputValidator _inputValidator;
-    private readonly OperationCoordinator _operationCoordinator;
-    private readonly ConnectivityValidator _connectivityValidator;
+    private readonly IThorWorkflowOrchestrator _thorWorkflowOrchestrator;
+    private readonly ThorScriptSettings _thorScriptSettings;
     private readonly IProfileStore _profileStore;
     private readonly IFileDialogService _fileDialogService;
     private readonly IUserDialogService _userDialogService;
+    private readonly IClipboardService _clipboardService;
 
     private string _hostIp = string.Empty;
     private string _targetIp = string.Empty;
     private string _filePath = string.Empty;
-    private string _status = "Idle";
+    private string _statusMessage = "Idle";
+    private string _selectedOperationText = "Not started";
+    private string _unhandledErrorMessage = string.Empty;
+    private string _logText = string.Empty;
     private string _currentProfileName = string.Empty;
     private bool _isRunning;
     private ValidationResult _validationResult = ValidationResult.Failure("Enter THOR Host IP, THOR Target IP, and a valid file.");
     private CancellationTokenSource? _currentOperationCts;
-    private OperationType _detectedOperation;
+    private OperationType _lastSelectedOperation = OperationType.None;
 
     public MainViewModel(
         FileTypeResolver fileTypeResolver,
         InputValidator inputValidator,
-        OperationCoordinator operationCoordinator,
-        ConnectivityValidator connectivityValidator,
+        IThorWorkflowOrchestrator thorWorkflowOrchestrator,
+        ThorScriptSettings thorScriptSettings,
         IProfileStore profileStore,
         IFileDialogService fileDialogService,
-        IUserDialogService userDialogService)
+        IUserDialogService userDialogService,
+        IClipboardService clipboardService)
     {
         _fileTypeResolver = fileTypeResolver;
         _inputValidator = inputValidator;
-        _operationCoordinator = operationCoordinator;
-        _connectivityValidator = connectivityValidator;
+        _thorWorkflowOrchestrator = thorWorkflowOrchestrator;
+        _thorScriptSettings = thorScriptSettings;
         _profileStore = profileStore;
         _fileDialogService = fileDialogService;
         _userDialogService = userDialogService;
+        _clipboardService = clipboardService;
 
-        LogEntries = new ObservableCollection<LogEntry>();
+        Logs = new ObservableCollection<LogEntry>();
 
         BrowseCommand = new RelayCommand(BrowseForFile, () => !IsRunning);
         SaveEnvironmentCommand = new AsyncRelayCommand(SaveEnvironmentAsync, () => !IsRunning);
         LoadEnvironmentCommand = new AsyncRelayCommand(LoadEnvironmentAsync, () => !IsRunning);
-        StartCommand = new AsyncRelayCommand(StartAsync, CanStart);
+        FlashCommand = new AsyncRelayCommand(() => ExecuteOperationAsync(OperationType.Flash), CanStartOperation);
+        CapsuleUpdateCommand = new AsyncRelayCommand(() => ExecuteOperationAsync(OperationType.CapsuleUpdate), CanStartOperation);
         CancelCommand = new RelayCommand(Cancel, () => IsRunning);
-        ClearLogCommand = new RelayCommand(() => LogEntries.Clear());
+        CopyLogCommand = new RelayCommand(CopyLog, CanCopyLog);
+        ClearLogCommand = new RelayCommand(ClearLogs);
 
-        UpdateStateAfterInputChange();
+        UpdateValidationState();
     }
 
-    public ObservableCollection<LogEntry> LogEntries { get; }
+    public ObservableCollection<LogEntry> Logs { get; }
 
     public RelayCommand BrowseCommand { get; }
 
@@ -65,9 +74,13 @@ public sealed class MainViewModel : ViewModelBase
 
     public AsyncRelayCommand LoadEnvironmentCommand { get; }
 
-    public AsyncRelayCommand StartCommand { get; }
+    public AsyncRelayCommand FlashCommand { get; }
+
+    public AsyncRelayCommand CapsuleUpdateCommand { get; }
 
     public RelayCommand CancelCommand { get; }
+
+    public RelayCommand CopyLogCommand { get; }
 
     public RelayCommand ClearLogCommand { get; }
 
@@ -78,7 +91,7 @@ public sealed class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _hostIp, value))
             {
-                UpdateStateAfterInputChange();
+                UpdateValidationState();
             }
         }
     }
@@ -90,7 +103,7 @@ public sealed class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _targetIp, value))
             {
-                UpdateStateAfterInputChange();
+                UpdateValidationState();
             }
         }
     }
@@ -102,34 +115,33 @@ public sealed class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _filePath, value))
             {
-                UpdateStateAfterInputChange();
+                UpdateValidationState();
             }
         }
     }
 
-    public OperationType DetectedOperation
+    public string StatusMessage
     {
-        get => _detectedOperation;
-        private set
-        {
-            if (SetProperty(ref _detectedOperation, value))
-            {
-                OnPropertyChanged(nameof(DetectedOperationDisplay));
-            }
-        }
+        get => _statusMessage;
+        private set => SetProperty(ref _statusMessage, value);
     }
 
-    public string DetectedOperationDisplay => DetectedOperation switch
+    public string SelectedOperationText
     {
-        OperationType.BinFlash => "BIN Flash",
-        OperationType.CapUpdate => "CAP Update",
-        _ => "Unknown"
-    };
+        get => _selectedOperationText;
+        private set => SetProperty(ref _selectedOperationText, value);
+    }
 
-    public string Status
+    public string UnhandledErrorMessage
     {
-        get => _status;
-        private set => SetProperty(ref _status, value);
+        get => _unhandledErrorMessage;
+        private set => SetProperty(ref _unhandledErrorMessage, value);
+    }
+
+    public string LogText
+    {
+        get => _logText;
+        private set => SetProperty(ref _logText, value);
     }
 
     public bool IsRunning
@@ -179,7 +191,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         if (!IsSupportedFile(filePath))
         {
-            Status = "Only .bin and .cap files can be dropped here.";
+            StatusMessage = "Only .bin and .cap files can be dropped here.";
             AddLog("WARN", "UI", $"Rejected dropped file '{filePath}'.");
             return;
         }
@@ -188,7 +200,13 @@ public sealed class MainViewModel : ViewModelBase
         AddLog("INFO", "UI", $"Accepted dropped file '{filePath}'.");
     }
 
-    private bool CanStart()
+    public void ReportUnhandledError(string stage, Exception exception)
+    {
+        StatusMessage = "Failed";
+        UnhandledErrorMessage = $"Unhandled {stage} error: {exception.Message}";
+    }
+
+    private bool CanStartOperation()
     {
         return !IsRunning && _validationResult.IsValid;
     }
@@ -222,7 +240,7 @@ public sealed class MainViewModel : ViewModelBase
             HostIp = HostIp.Trim(),
             TargetIp = TargetIp.Trim(),
             LastFilePath = FilePath.Trim(),
-            LastOperation = DetectedOperation,
+            LastOperation = _lastSelectedOperation,
             UpdatedAt = DateTime.UtcNow
         };
 
@@ -251,80 +269,73 @@ public sealed class MainViewModel : ViewModelBase
         var loadedProfile = await _profileStore.LoadAsync(selected.ProfileName).ConfigureAwait(true) ?? selected;
 
         _currentProfileName = loadedProfile.ProfileName;
+        _lastSelectedOperation = loadedProfile.LastOperation;
         HostIp = loadedProfile.HostIp;
         TargetIp = loadedProfile.TargetIp;
         FilePath = loadedProfile.LastFilePath;
+        SelectedOperationText = GetOperationDisplayText(loadedProfile.LastOperation);
 
         AddLog("INFO", "Profiles", $"Loaded environment profile '{loadedProfile.ProfileName}'.");
     }
 
-    private async Task StartAsync()
+    private async Task ExecuteOperationAsync(OperationType operationType)
     {
-        var context = BuildContext();
+        var context = BuildContext(operationType);
         _validationResult = _inputValidator.Validate(context);
         if (!_validationResult.IsValid)
         {
-            UpdateStateAfterInputChange();
+            UpdateValidationState();
             return;
         }
 
-        if (!_userDialogService.ConfirmOperation(DetectedOperation, TargetIp.Trim(), FilePath.Trim()))
+        if (!_userDialogService.ConfirmOperation(operationType, TargetIp.Trim(), FilePath.Trim()))
         {
             AddLog("INFO", "UI", "Operation start was cancelled at confirmation dialog.");
             return;
         }
 
+        _lastSelectedOperation = operationType;
+        SelectedOperationText = GetOperationDisplayText(operationType);
+        UnhandledErrorMessage = string.Empty;
         IsRunning = true;
-        Status = "Running";
+        StatusMessage = "Running";
         _currentOperationCts = new CancellationTokenSource();
 
-        AddLog("INFO", "Operation", "------------------------------------------------------------");
-        AddLog("INFO", "Operation", $"Starting {DetectedOperationDisplay} for {FilePath.Trim()}.");
+        AddLog("INFO", "Validation", "------------------------------------------------------------");
+        AddLog("INFO", "Validation", $"Starting {SelectedOperationText} workflow for '{FilePath.Trim()}'.");
 
         try
         {
-            var progress = new Progress<LogEntry>(entry => LogEntries.Add(entry));
-
-            var connectivityOkay = await _connectivityValidator
-                .ValidateAsync(context, progress, _currentOperationCts.Token)
-                .ConfigureAwait(true);
-
-            if (!connectivityOkay)
-            {
-                Status = "Failed";
-                AddLog("ERROR", "Connectivity", "Connectivity validation failed.");
-                return;
-            }
-
-            var result = await _operationCoordinator
+            var progress = new Progress<LogEntry>(AppendLogEntry);
+            var result = await _thorWorkflowOrchestrator
                 .ExecuteAsync(context, progress, _currentOperationCts.Token)
                 .ConfigureAwait(true);
 
             if (_currentOperationCts.IsCancellationRequested || result.SummaryMessage.Contains("cancel", StringComparison.OrdinalIgnoreCase))
             {
-                Status = "Cancelled";
+                StatusMessage = "Cancelled";
             }
             else
             {
-                Status = result.Success ? "Success" : "Failed";
+                StatusMessage = result.Success ? "Success" : "Failed";
             }
 
-            AddLog(result.Success ? "INFO" : "ERROR", "Operation", result.SummaryMessage);
+            AddLog(result.Success ? "INFO" : "ERROR", "Completion", result.SummaryMessage);
             if (result.Exception is not null)
             {
-                AddLog("ERROR", "Operation", result.Exception.Message);
+                AddLog("ERROR", "Completion", result.Exception.Message);
             }
         }
         catch (OperationCanceledException)
         {
-            Status = "Cancelled";
-            AddLog("WARN", "Operation", "Operation cancelled.");
+            StatusMessage = "Cancelled";
+            AddLog("WARN", "Completion", "Operation cancelled.");
         }
         catch (Exception exception)
         {
-            Status = "Failed";
-            AddLog("ERROR", "Operation", exception.Message);
-            _userDialogService.ShowError("Operation Failed", exception.Message);
+            StatusMessage = "Failed";
+            AddLog("ERROR", "Completion", exception.Message);
+            AddLog("ERROR", "Completion", "Operation failed. Review the log output below for details.");
         }
         finally
         {
@@ -342,7 +353,7 @@ public sealed class MainViewModel : ViewModelBase
             return;
         }
 
-        AddLog("WARN", "Operation", "Cancellation requested by user.");
+        AddLog("WARN", "Completion", "Cancellation requested by user.");
         _currentOperationCts?.Cancel();
     }
 
@@ -351,7 +362,7 @@ public sealed class MainViewModel : ViewModelBase
         FilePath = Path.GetFullPath(filePath);
     }
 
-    private OperationContext BuildContext()
+    private OperationContext BuildContext(OperationType operationType)
     {
         var fullPath = string.IsNullOrWhiteSpace(FilePath) ? string.Empty : Path.GetFullPath(FilePath.Trim());
 
@@ -360,23 +371,23 @@ public sealed class MainViewModel : ViewModelBase
             HostIp = HostIp.Trim(),
             TargetIp = TargetIp.Trim(),
             FilePath = fullPath,
-            WorkingDirectory = string.IsNullOrWhiteSpace(fullPath)
-                ? Environment.CurrentDirectory
-                : Path.GetDirectoryName(fullPath) ?? Environment.CurrentDirectory
+            OperationType = operationType,
+            ScriptsRootPath = _thorScriptSettings.ScriptsRootPath,
+            WorkingDirectory = DetermineScriptsWorkingDirectory()
         };
     }
 
-    private void UpdateStateAfterInputChange()
+    private void UpdateValidationState()
     {
-        DetectedOperation = _fileTypeResolver.Resolve(FilePath);
-        _validationResult = _inputValidator.Validate(HostIp.Trim(), TargetIp.Trim(), FilePath.Trim());
+        _validationResult = _inputValidator.Validate(HostIp.Trim(), TargetIp.Trim(), FilePath.Trim(), OperationType.Flash);
 
         if (IsRunning)
         {
             return;
         }
 
-        Status = DetermineIdleStatus();
+        UnhandledErrorMessage = string.Empty;
+        StatusMessage = DetermineIdleStatus();
         RefreshCommandStates();
     }
 
@@ -401,15 +412,17 @@ public sealed class MainViewModel : ViewModelBase
         BrowseCommand.RaiseCanExecuteChanged();
         SaveEnvironmentCommand.RaiseCanExecuteChanged();
         LoadEnvironmentCommand.RaiseCanExecuteChanged();
-        StartCommand.RaiseCanExecuteChanged();
+        FlashCommand.RaiseCanExecuteChanged();
+        CapsuleUpdateCommand.RaiseCanExecuteChanged();
         CancelCommand.RaiseCanExecuteChanged();
+        CopyLogCommand.RaiseCanExecuteChanged();
     }
 
     private bool IsSupportedFile(string? filePath)
     {
         return !string.IsNullOrWhiteSpace(filePath)
                && File.Exists(filePath)
-               && _fileTypeResolver.Resolve(filePath) != OperationType.Unknown;
+               && _fileTypeResolver.IsSupportedPackage(filePath);
     }
 
     private string BuildDefaultProfileName()
@@ -422,14 +435,73 @@ public sealed class MainViewModel : ViewModelBase
         return "Thor Environment";
     }
 
+    private static string GetOperationDisplayText(OperationType operationType)
+    {
+        return operationType switch
+        {
+            OperationType.Flash => "Flash",
+            OperationType.CapsuleUpdate => "Capsule Update",
+            _ => "Not started"
+        };
+    }
+
+    private string DetermineScriptsWorkingDirectory()
+    {
+        return Path.IsPathRooted(_thorScriptSettings.ScriptsRootPath)
+            ? Path.GetFullPath(_thorScriptSettings.ScriptsRootPath)
+            : Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, _thorScriptSettings.ScriptsRootPath));
+    }
+
     private void AddLog(string level, string stage, string message)
     {
-        LogEntries.Add(new LogEntry
+        AppendLogEntry(new LogEntry
         {
             Timestamp = DateTime.Now,
             Level = level,
             Stage = stage,
             Message = message
         });
+    }
+
+    private void AppendLogEntry(LogEntry entry)
+    {
+        Logs.Add(entry);
+
+        if (string.IsNullOrEmpty(LogText))
+        {
+            LogText = entry.DisplayText;
+            CopyLogCommand.RaiseCanExecuteChanged();
+            return;
+        }
+
+        var builder = new StringBuilder(LogText.Length + entry.DisplayText.Length + Environment.NewLine.Length);
+        builder.Append(LogText);
+        builder.AppendLine();
+        builder.Append(entry.DisplayText);
+        LogText = builder.ToString();
+        CopyLogCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ClearLogs()
+    {
+        Logs.Clear();
+        LogText = string.Empty;
+        CopyLogCommand.RaiseCanExecuteChanged();
+    }
+
+    private bool CanCopyLog()
+    {
+        return !string.IsNullOrWhiteSpace(LogText);
+    }
+
+    private void CopyLog()
+    {
+        if (!CanCopyLog())
+        {
+            return;
+        }
+
+        _clipboardService.SetText(LogText);
+        StatusMessage = "Log copied to clipboard";
     }
 }

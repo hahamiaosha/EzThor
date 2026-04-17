@@ -1,8 +1,9 @@
 using System.Windows;
+using System.Windows.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using ThorFlasher.Adapters.Adapters;
+using ThorFlasher.Adapters.ScriptExecution;
 using ThorFlasher.Core.Interfaces;
 using ThorFlasher.Core.Models;
 using ThorFlasher.Core.Services;
@@ -17,6 +18,12 @@ namespace ThorFlasher.UI;
 public partial class App : Application
 {
     private IHost? _host;
+
+    public App()
+    {
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+    }
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -33,24 +40,29 @@ public partial class App : Application
             })
             .ConfigureServices((context, services) =>
             {
-                var commandOptions = context.Configuration
-                    .GetSection("ThorCommandOptions")
-                    .Get<ThorCommandOptions>() ?? new ThorCommandOptions();
+                var thorScriptSettings = context.Configuration
+                    .GetSection("ThorScriptSettings")
+                    .Get<ThorScriptSettings>() ?? new ThorScriptSettings();
+                var scriptExecutionSettings = context.Configuration
+                    .GetSection("ScriptExecutionSettings")
+                    .Get<ScriptExecutionSettings>() ?? new ScriptExecutionSettings();
 
-                services.AddSingleton(commandOptions);
+                services.AddSingleton(thorScriptSettings);
+                services.AddSingleton(scriptExecutionSettings);
 
                 services.AddSingleton<FileTypeResolver>();
                 services.AddSingleton<InputValidator>();
-                services.AddSingleton<OperationCoordinator>();
                 services.AddSingleton<ConnectivityValidator>();
 
                 services.AddSingleton<IProcessRunner, ProcessRunner>();
+                services.AddSingleton<IScriptConfigurationUpdater, ScriptConfigurationUpdater>();
+                services.AddSingleton<IThorScriptResolver, ThorScriptResolver>();
+                services.AddSingleton<IThorWorkflowOrchestrator, ThorWorkflowOrchestrator>();
                 services.AddSingleton<IProfileStore, JsonProfileStore>();
                 services.AddSingleton<ILogStore, JsonLogStore>();
-                services.AddSingleton<IThorOperationAdapter, BinFlashAdapter>();
-                services.AddSingleton<IThorOperationAdapter, CapUpdateAdapter>();
 
                 services.AddSingleton<IFileDialogService, FileDialogService>();
+                services.AddSingleton<IClipboardService, ClipboardService>();
                 services.AddSingleton<IUserDialogService, UserDialogService>();
 
                 services.AddSingleton<MainViewModel>();
@@ -77,5 +89,39 @@ public partial class App : Application
         }
 
         base.OnExit(e);
+    }
+
+    private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        ReportUnhandledException("UI", e.Exception);
+        e.Handled = true;
+    }
+
+    private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        ReportUnhandledException("Task", e.Exception);
+        e.SetObserved();
+    }
+
+    private void ReportUnhandledException(string stage, Exception exception)
+    {
+        try
+        {
+            if (_host?.Services.GetService<MainViewModel>() is { } viewModel)
+            {
+                viewModel.ReportUnhandledError(stage, exception);
+                return;
+            }
+        }
+        catch
+        {
+            // Fall back to message box if the main view model is unavailable.
+        }
+
+        MessageBox.Show(
+            exception.Message,
+            $"Unhandled {stage} Error",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
     }
 }

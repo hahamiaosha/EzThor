@@ -3,17 +3,34 @@ using ThorFlasher.Core.Models;
 
 namespace ThorFlasher.Adapters.Helpers;
 
-internal static class CommandTemplateExpander
+internal static class ShellTemplateExpander
 {
-    public static string Expand(string template, OperationContext context)
+    public static string BuildShellArguments(
+        string shellArgumentsTemplate,
+        string scriptPath,
+        string scriptArguments,
+        string? workingDirectory = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(template);
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentException.ThrowIfNullOrWhiteSpace(shellArgumentsTemplate);
+
+        return shellArgumentsTemplate
+            .Replace("{scriptPath}", EscapeWindowsArgument(scriptPath), StringComparison.Ordinal)
+            .Replace("{args}", scriptArguments ?? string.Empty, StringComparison.Ordinal)
+            .Replace("{workingDirectory}", EscapeWindowsArgument(workingDirectory ?? string.Empty), StringComparison.Ordinal);
+    }
+
+    public static string ExpandScriptArguments(string? template, OperationContext context)
+    {
+        if (string.IsNullOrWhiteSpace(template))
+        {
+            return string.Empty;
+        }
 
         return template
             .Replace("{hostIp}", EscapeWindowsArgument(context.HostIp), StringComparison.Ordinal)
             .Replace("{targetIp}", EscapeWindowsArgument(context.TargetIp), StringComparison.Ordinal)
-            .Replace("{filePath}", EscapeWindowsArgument(context.FilePath), StringComparison.Ordinal);
+            .Replace("{filePath}", EscapeWindowsArgument(context.FilePath), StringComparison.Ordinal)
+            .Replace("{scriptsRootPath}", EscapeWindowsArgument(context.ScriptsRootPath), StringComparison.Ordinal);
     }
 
     private static string EscapeWindowsArgument(string value)

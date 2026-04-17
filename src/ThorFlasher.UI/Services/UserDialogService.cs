@@ -11,12 +11,12 @@ public sealed class UserDialogService : IUserDialogService
     {
         var operationName = operationType switch
         {
-            OperationType.BinFlash => "BIN Flash",
-            OperationType.CapUpdate => "CAP Update",
+            OperationType.Flash => "Flash",
+            OperationType.CapsuleUpdate => "Capsule Update",
             _ => "Unknown Operation"
         };
 
-        var message = $"You are about to run {operationName} on target {targetIp} using file {filePath}. Continue?";
+        var message = $"You are about to upload {filePath} to target {targetIp} and run {operationName}. Continue?";
         return ShowMessageBox(message, "Confirm Operation", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
     }
 

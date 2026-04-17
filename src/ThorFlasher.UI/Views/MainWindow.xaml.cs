@@ -1,5 +1,5 @@
-using System.Collections.Specialized;
 using System.Windows;
+using System.Windows.Threading;
 using ThorFlasher.UI.ViewModels;
 
 namespace ThorFlasher.UI.Views;
@@ -10,16 +10,9 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = viewModel;
-        viewModel.LogEntries.CollectionChanged += OnLogEntriesCollectionChanged;
     }
 
     private MainViewModel ViewModel => (MainViewModel)DataContext;
-
-    protected override void OnClosed(EventArgs e)
-    {
-        ViewModel.LogEntries.CollectionChanged -= OnLogEntriesCollectionChanged;
-        base.OnClosed(e);
-    }
 
     private void DropZone_PreviewDragOver(object sender, DragEventArgs e)
     {
@@ -39,15 +32,26 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private void OnLogEntriesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void LogTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
-        if (LogListBox.Items.Count == 0)
-        {
-            return;
-        }
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.Background,
+            new Action(() =>
+            {
+                try
+                {
+                    if (LogTextBox.IsKeyboardFocusWithin)
+                    {
+                        return;
+                    }
 
-        var lastItem = LogListBox.Items[LogListBox.Items.Count - 1];
-        LogListBox.ScrollIntoView(lastItem);
+                    LogTextBox.ScrollToEnd();
+                }
+                catch
+                {
+                    // Keep the window alive even if auto-scroll fails.
+                }
+            }));
     }
 
     private static string[] ExtractFilePaths(DragEventArgs e)

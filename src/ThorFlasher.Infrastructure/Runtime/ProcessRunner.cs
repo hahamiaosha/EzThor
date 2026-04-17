@@ -7,12 +7,14 @@ namespace ThorFlasher.Infrastructure.Runtime;
 
 public sealed class ProcessRunner : IProcessRunner
 {
+    private const string StageTokenKey = "THORFLASHER_LOG_STAGE";
+
     public async Task<OperationResult> RunAsync(ProcessRunRequest request, IProgress<LogEntry> progress, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(progress);
 
-        if (string.IsNullOrWhiteSpace(request.Executable))
+        if (string.IsNullOrWhiteSpace(request.FileName))
         {
             return new OperationResult
             {
@@ -24,12 +26,13 @@ public sealed class ProcessRunner : IProcessRunner
 
         var workingDirectory = ResolveWorkingDirectory(request.WorkingDirectory);
         Directory.CreateDirectory(workingDirectory);
+        var stage = ResolveStage(request.EnvironmentVariables);
 
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = request.Executable,
+                FileName = request.FileName,
                 Arguments = request.Arguments,
                 WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
@@ -44,6 +47,8 @@ public sealed class ProcessRunner : IProcessRunner
         var errorCompletion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var cancellationObserved = false;
 
+        ApplyEnvironmentVariables(process.StartInfo, request.EnvironmentVariables);
+
         process.OutputDataReceived += (_, eventArgs) =>
         {
             if (eventArgs.Data is null)
@@ -52,7 +57,7 @@ public sealed class ProcessRunner : IProcessRunner
                 return;
             }
 
-            progress.Report(CreateLog("INFO", request.Stage, eventArgs.Data));
+            progress.Report(CreateLog("INFO", stage, eventArgs.Data));
         };
 
         process.ErrorDataReceived += (_, eventArgs) =>
@@ -63,12 +68,12 @@ public sealed class ProcessRunner : IProcessRunner
                 return;
             }
 
-            progress.Report(CreateLog("ERROR", request.Stage, eventArgs.Data));
+            progress.Report(CreateLog("ERROR", stage, eventArgs.Data));
         };
 
         try
         {
-            progress.Report(CreateLog("INFO", request.Stage, $"Launching '{request.Executable}' in '{workingDirectory}'."));
+            progress.Report(CreateLog("INFO", stage, $"Launching '{request.FileName}' in '{workingDirectory}'."));
 
             if (!process.Start())
             {
@@ -105,7 +110,7 @@ public sealed class ProcessRunner : IProcessRunner
 
             if (cancellationObserved || token.IsCancellationRequested)
             {
-                progress.Report(CreateLog("WARN", request.Stage, "Operation was cancelled."));
+                progress.Report(CreateLog("WARN", stage, "Operation was cancelled."));
                 return new OperationResult
                 {
                     Success = false,
@@ -115,7 +120,7 @@ public sealed class ProcessRunner : IProcessRunner
             }
 
             var succeeded = process.ExitCode == 0;
-            progress.Report(CreateLog(succeeded ? "INFO" : "ERROR", request.Stage, $"Process exited with code {process.ExitCode}."));
+            progress.Report(CreateLog(succeeded ? "INFO" : "ERROR", stage, $"Process exited with code {process.ExitCode}."));
 
             return new OperationResult
             {
@@ -128,7 +133,7 @@ public sealed class ProcessRunner : IProcessRunner
         }
         catch (Win32Exception exception)
         {
-            progress.Report(CreateLog("ERROR", request.Stage, exception.Message));
+            progress.Report(CreateLog("ERROR", stage, exception.Message));
             return new OperationResult
             {
                 Success = false,
@@ -139,7 +144,7 @@ public sealed class ProcessRunner : IProcessRunner
         }
         catch (Exception exception)
         {
-            progress.Report(CreateLog("ERROR", request.Stage, exception.Message));
+            progress.Report(CreateLog("ERROR", stage, exception.Message));
             return new OperationResult
             {
                 Success = false,
@@ -148,6 +153,36 @@ public sealed class ProcessRunner : IProcessRunner
                 Exception = exception
             };
         }
+    }
+
+    private static void ApplyEnvironmentVariables(ProcessStartInfo startInfo, IDictionary<string, string>? environmentVariables)
+    {
+        if (environmentVariables is null)
+        {
+            return;
+        }
+
+        foreach (var pair in environmentVariables)
+        {
+            if (string.Equals(pair.Key, StageTokenKey, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            startInfo.Environment[pair.Key] = pair.Value;
+        }
+    }
+
+    private static string ResolveStage(IDictionary<string, string>? environmentVariables)
+    {
+        if (environmentVariables is null)
+        {
+            return "Process";
+        }
+
+        return environmentVariables.TryGetValue(StageTokenKey, out var stage) && !string.IsNullOrWhiteSpace(stage)
+            ? stage
+            : "Process";
     }
 
     private static string ResolveWorkingDirectory(string? workingDirectory)

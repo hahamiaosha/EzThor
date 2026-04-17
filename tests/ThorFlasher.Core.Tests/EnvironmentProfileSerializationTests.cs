@@ -14,7 +14,7 @@ public sealed class EnvironmentProfileSerializationTests
             HostIp = "192.168.10.1",
             TargetIp = "192.168.10.2",
             LastFilePath = @"C:\Images\firmware.bin",
-            LastOperation = OperationType.BinFlash,
+            LastOperation = OperationType.Flash,
             UpdatedAt = new DateTime(2026, 4, 17, 12, 30, 0, DateTimeKind.Utc)
         };
 

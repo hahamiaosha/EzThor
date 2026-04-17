@@ -16,5 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ThorFlasher.Core\ThorFlasher.Core.csproj" />
+    <ProjectReference Include="..\..\src\ThorFlasher.Adapters\ThorFlasher.Adapters.csproj" />
+    <ProjectReference Include="..\..\src\ThorFlasher.Infrastructure\ThorFlasher.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

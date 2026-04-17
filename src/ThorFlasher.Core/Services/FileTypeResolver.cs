@@ -4,20 +4,20 @@ namespace ThorFlasher.Core.Services;
 
 public sealed class FileTypeResolver
 {
-    public OperationType Resolve(string? filePath)
+    public bool IsSupportedPackage(string? filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
         {
-            return OperationType.Unknown;
+            return false;
         }
 
-        var extension = Path.GetExtension(filePath);
+        return GetNormalizedExtension(filePath) is ".bin" or ".cap";
+    }
 
-        return extension.ToLowerInvariant() switch
-        {
-            ".bin" => OperationType.BinFlash,
-            ".cap" => OperationType.CapUpdate,
-            _ => OperationType.Unknown
-        };
+    public string GetNormalizedExtension(string? filePath)
+    {
+        return string.IsNullOrWhiteSpace(filePath)
+            ? string.Empty
+            : Path.GetExtension(filePath).ToLowerInvariant();
     }
 }

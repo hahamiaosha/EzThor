@@ -16,10 +16,10 @@ public sealed class InputValidator
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return Validate(context.HostIp, context.TargetIp, context.FilePath);
+        return Validate(context.HostIp, context.TargetIp, context.FilePath, context.OperationType);
     }
 
-    public ValidationResult Validate(string? hostIp, string? targetIp, string? filePath)
+    public ValidationResult Validate(string? hostIp, string? targetIp, string? filePath, OperationType operationType)
     {
         var errors = new List<string>();
 
@@ -44,10 +44,15 @@ public sealed class InputValidator
                 errors.Add("Selected firmware/capsule file does not exist.");
             }
 
-            if (_fileTypeResolver.Resolve(filePath) == OperationType.Unknown)
+            if (!_fileTypeResolver.IsSupportedPackage(filePath))
             {
                 errors.Add("Only .bin and .cap files are supported.");
             }
+        }
+
+        if (operationType is not OperationType.Flash and not OperationType.CapsuleUpdate)
+        {
+            errors.Add("Operation type must be Flash or Capsule Update.");
         }
 
         return new ValidationResult(errors);

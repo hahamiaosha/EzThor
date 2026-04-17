@@ -1,4 +1,5 @@
 using ThorFlasher.Core.Services;
+using ThorFlasher.Core.Models;
 
 namespace ThorFlasher.Core.Tests;
 
@@ -15,7 +16,7 @@ public sealed class InputValidatorTests
 
         try
         {
-            var result = _validator.Validate("192.168.1.10", "192.168.1.20", path);
+            var result = _validator.Validate("192.168.1.10", "192.168.1.20", path, OperationType.Flash);
 
             Assert.True(result.IsValid);
             Assert.Empty(result.Errors);
@@ -33,7 +34,7 @@ public sealed class InputValidatorTests
 
         try
         {
-            var result = _validator.Validate("invalid-host", "192.168.1.20", path);
+            var result = _validator.Validate("invalid-host", "192.168.1.20", path, OperationType.Flash);
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, error => error.Contains("Host IP", StringComparison.OrdinalIgnoreCase));
@@ -51,7 +52,7 @@ public sealed class InputValidatorTests
 
         try
         {
-            var result = _validator.Validate("192.168.1.10", "bad-target", path);
+            var result = _validator.Validate("192.168.1.10", "bad-target", path, OperationType.Flash);
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, error => error.Contains("Target IP", StringComparison.OrdinalIgnoreCase));
@@ -65,7 +66,7 @@ public sealed class InputValidatorTests
     [Fact]
     public void Validate_ReturnsFailure_WhenFileDoesNotExist()
     {
-        var result = _validator.Validate("192.168.1.10", "192.168.1.20", Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.bin"));
+        var result = _validator.Validate("192.168.1.10", "192.168.1.20", Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.bin"), OperationType.Flash);
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, error => error.Contains("does not exist", StringComparison.OrdinalIgnoreCase));
@@ -78,10 +79,28 @@ public sealed class InputValidatorTests
 
         try
         {
-            var result = _validator.Validate("192.168.1.10", "192.168.1.20", path);
+            var result = _validator.Validate("192.168.1.10", "192.168.1.20", path, OperationType.Flash);
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, error => error.Contains(".bin and .cap", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Validate_ReturnsFailure_WhenOperationTypeIsNone()
+    {
+        var path = CreateTempFile(".bin");
+
+        try
+        {
+            var result = _validator.Validate("192.168.1.10", "192.168.1.20", path, OperationType.None);
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, error => error.Contains("Operation type", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
