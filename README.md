@@ -1,6 +1,15 @@
 # ThorFlasher v2
 
-ThorFlasher v2 is a Windows WPF `.NET 8` desktop application that acts as a GUI wrapper around existing `Thor_Script` shell scripts. It does not implement a new THOR flashing backend. The app validates input, updates script-side configuration tokens, runs `send_build.sh`, then runs either the configured Flash script or Capsule Update script.
+ThorFlasher v2 is a Windows WPF `.NET 8` desktop application that acts as a GUI wrapper around existing `Thor_Script` shell scripts (or `.exe` flashers). It does not implement a new THOR flashing backend. The app validates input, updates script-side configuration tokens, runs `send_build.sh`, then runs either the configured Flash script or Capsule Update script.
+
+## Quick Start (Standalone Executable)
+
+The easiest way to use or distribute ThorFlasher is by building a self-contained executable. This requires the [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) to be installed on the build machine.
+
+1. Double-click the `build-exe.cmd` file in the root directory.
+2. The script will compile the app into a single standalone file and create a `dist` folder.
+3. The `dist` folder will contain `ThorFlasher.exe` along with a copy of the `Thor_Script` folder.
+4. **Distribution:** You can zip the `dist` folder and move it to any new Windows PC. No installation or .NET SDK is required for the end user to run `ThorFlasher.exe`.
 
 ## Flow
 
@@ -31,51 +40,28 @@ The clicked button determines the operation. File extension no longer selects th
 - live log streaming
 - cancel while a script is running
 
-## Build
+## Manual Build (Developers)
 
-This repo includes a local .NET SDK under `.dotnet`, so you can build with either your system SDK or the bundled one.
-
-Using the bundled SDK:
-
-```powershell
-.\.dotnet\dotnet.exe restore ThorFlasher.sln
-.\.dotnet\dotnet.exe build ThorFlasher.sln
-```
-
-Using a system-installed SDK:
+If you don't want to use `build-exe.cmd`, you can build manually using your system-installed .NET SDK:
 
 ```powershell
 dotnet restore ThorFlasher.sln
 dotnet build ThorFlasher.sln
 ```
 
-## Run
+## Run from Source
 
 ```powershell
-.\.dotnet\dotnet.exe run --project .\src\ThorFlasher.UI\ThorFlasher.UI.csproj
+dotnet run --project .\src\ThorFlasher.UI\ThorFlasher.UI.csproj
 ```
 
 With a startup file:
 
 ```powershell
-.\.dotnet\dotnet.exe run --project .\src\ThorFlasher.UI\ThorFlasher.UI.csproj -- "C:\path\to\firmware.bin"
+dotnet run --project .\src\ThorFlasher.UI\ThorFlasher.UI.csproj -- "C:\path\to\firmware.bin"
 ```
 
-## Publish
-
-```powershell
-.\.dotnet\dotnet.exe publish .\src\ThorFlasher.UI\ThorFlasher.UI.csproj -c Release -r win-x64 --self-contained false
-```
-
-The executable name is exactly `ThorFlasher.exe`.
-
-Typical output paths:
-
-- Debug build: `src\ThorFlasher.UI\bin\Debug\net8.0-windows\ThorFlasher.exe`
-- Release build: `src\ThorFlasher.UI\bin\Release\net8.0-windows\ThorFlasher.exe`
-- Published app: `src\ThorFlasher.UI\bin\Release\net8.0-windows\win-x64\publish\ThorFlasher.exe`
-
-You can also use:
+You can also use the legacy launcher:
 
 ```powershell
 .\Launch-ThorFlasher.cmd
@@ -85,7 +71,7 @@ You can also use:
 
 The main configuration file is:
 
-- `src/ThorFlasher.UI/appsettings.json`
+- `src/ThorFlasher.UI/appsettings.json` (or `appsettings.json` next to `ThorFlasher.exe` in the `dist` folder)
 
 ### ThorScriptSettings
 
@@ -110,7 +96,7 @@ Important:
 
 ### ScriptExecutionSettings
 
-These values control how `.sh` files are launched from Windows:
+These values control how files are launched from Windows:
 
 - `ShellExecutable`
 - `ShellArgumentsTemplate`
@@ -119,7 +105,7 @@ These values control how `.sh` files are launched from Windows:
 - `CapsuleArgumentsTemplate`
 - `TranslateWindowsPathsForWsl`
 
-Default example:
+Default example for bash scripts:
 
 ```json
 "ScriptExecutionSettings": {
@@ -186,15 +172,9 @@ If your current scripts hardcode values directly, create a dedicated config/temp
 
 The UI currently supports profile save/load. Log persistence infrastructure is implemented for future UI exposure.
 
-## Testing
-
-```powershell
-.\.dotnet\dotnet.exe test .\tests\ThorFlasher.Core.Tests\ThorFlasher.Core.Tests.csproj
-```
-
 ## Important assumptions
 
-- ThorFlasher v2 is a GUI wrapper around existing `Thor_Script` scripts.
+- ThorFlasher v2 is a GUI wrapper around existing `Thor_Script` scripts (or executables).
 - Both Flash and Capsule Update run `send_build.sh` first.
 - The clicked button decides which follow-up script runs.
 - IP values entered in the UI are applied to the configured script-side token file before execution.
