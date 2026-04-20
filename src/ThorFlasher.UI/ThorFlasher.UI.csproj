@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>ThorFlasher</AssemblyName>
     <RootNamespace>ThorFlasher.UI</RootNamespace>
+    <ApplicationIcon>Assets\Thunder.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
