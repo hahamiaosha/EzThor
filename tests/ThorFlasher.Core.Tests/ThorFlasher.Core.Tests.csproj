@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -18,5 +19,6 @@
     <ProjectReference Include="..\..\src\ThorFlasher.Core\ThorFlasher.Core.csproj" />
     <ProjectReference Include="..\..\src\ThorFlasher.Adapters\ThorFlasher.Adapters.csproj" />
     <ProjectReference Include="..\..\src\ThorFlasher.Infrastructure\ThorFlasher.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ThorFlasher.UI\ThorFlasher.UI.csproj" />
   </ItemGroup>
 </Project>

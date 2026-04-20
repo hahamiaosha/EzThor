@@ -1,0 +1,128 @@
+<UserControl x:Class="ThorFlasher.UI.Views.Pages.ExecutionPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ThorFlasher.UI.Controls"
+             xmlns:views="clr-namespace:ThorFlasher.UI.Views">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="18" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <controls:SectionCard Grid.Row="0"
+                              Subtitle="Current operation state.">
+            <controls:SectionCard.Header>
+                <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                           Text="Execution Status" />
+            </controls:SectionCard.Header>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel>
+                    <controls:InfoRow Label="Operation"
+                                      Value="{Binding SelectedOperationText}" />
+                    <controls:InfoRow Label="Target"
+                                      Value="{Binding TargetSummaryDisplay}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Command="{Binding CancelCommand}"
+                            Content="Cancel" />
+                    <Button Margin="12,0,0,0"
+                            Style="{StaticResource SubtleButtonStyle}"
+                            Command="{Binding ClearLogCommand}"
+                            Content="Clear Log" />
+                </StackPanel>
+            </Grid>
+        </controls:SectionCard>
+
+        <controls:SectionCard Grid.Row="2"
+                              Subtitle="Live script output with structured stages and severity styling.">
+            <controls:SectionCard.Header>
+                <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                           Text="Log Console" />
+            </controls:SectionCard.Header>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                                   Foreground="{StaticResource Brush.Accent}"
+                                   Text="{StaticResource Icon.Log}" />
+                        <TextBlock Margin="8,0,0,0"
+                                   Style="{StaticResource CaptionTextStyle}"
+                                   Text="Structured runtime output" />
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Style="{StaticResource SubtleButtonStyle}"
+                            Command="{Binding CopyLogCommand}"
+                            Content="Copy Log" />
+                </Grid>
+
+                <Border Grid.Row="2"
+                        Style="{StaticResource InsetPanelBorderStyle}">
+                    <RichTextBox x:Name="LogRichTextBox"
+                                 IsReadOnly="True"
+                                 IsDocumentEnabled="True"
+                                 Background="{StaticResource Brush.SurfaceInset}"
+                                 BorderThickness="0"
+                                 FontFamily="{StaticResource FontFamily.Console}"
+                                 SelectionBrush="#547BD6"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 views:RichTextBoxLogBehavior.Entries="{Binding Logs}" />
+                </Border>
+
+                <Border Grid.Row="3"
+                        Margin="0,14,0,0"
+                        Padding="12,10"
+                        Background="{StaticResource Brush.ErrorMuted}"
+                        BorderBrush="{StaticResource Brush.Error}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource Radius.Medium}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding UnhandledErrorMessage}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding UnhandledErrorMessage}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold"
+                                   Foreground="{StaticResource Brush.Error}"
+                                   Text="Unhandled Error" />
+                        <TextBlock Margin="0,4,0,0"
+                                   Foreground="{StaticResource Brush.TextPrimary}"
+                                   Text="{Binding UnhandledErrorMessage}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </controls:SectionCard>
+    </Grid>
+</UserControl>
