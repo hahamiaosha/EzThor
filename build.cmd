@@ -36,21 +36,25 @@ echo.
 :: Step 3: Build installer with Inno Setup (if available)
 echo [3/3] Building installer ...
 where iscc >nul 2>&1
+if errorlevel 1 goto :no_inno
+
+iscc installer.iss
 if errorlevel 1 (
-    echo      Inno Setup compiler (iscc) not found on PATH.
-    echo      Install Inno Setup from https://jrsoftware.org/isinfo.php
-    echo      Then run:  iscc installer.iss
-    echo.
-    echo      Alternatively, distribute the publish\app\ folder as-is.
-    echo      The user only needs to run ThorFlasher.exe from that folder.
-) else (
-    iscc installer.iss
-    if errorlevel 1 (
-        echo ERROR: Inno Setup compilation failed.
-        exit /b 1
-    )
-    echo      Installer created: publish\ThorFlasher_Setup.exe
+    echo ERROR: Inno Setup compilation failed.
+    exit /b 1
 )
+echo      Installer created: publish\ThorFlasher_Setup.exe
+goto :done
+
+:no_inno
+echo      Inno Setup compiler (iscc) not found on PATH.
+echo      Install Inno Setup from https://jrsoftware.org/isinfo.php
+echo      Then run:  iscc installer.iss
+echo.
+echo      Alternatively, distribute the publish\app\ folder as-is.
+echo      The user only needs to run ThorFlasher.exe from that folder.
+
+:done
 
 echo.
 echo ============================================
