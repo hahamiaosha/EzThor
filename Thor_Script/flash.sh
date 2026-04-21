@@ -94,9 +94,9 @@ case "${FLASH_MODE}" in
     uefi)
         PARTITION_KEY="cpu-bootloader"
         echo "==> Step 1: Preparing UEFI flash (slot ${FLASH_SLOT}) on THOR Host ..."
-        echo "    Command: sudo ./l4t_initrd_flash.sh --no-flash --qspi-only --boot-chain-flash ${FLASH_SLOT} -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
+        echo "    Command: sudo ./l4t_initrd_flash.sh --no-flash --qspi-only --boot-chain-flash ${FLASH_SLOT} --boot-chain-select ${FLASH_SLOT} -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
         echo ""
-        run_on_host "./l4t_initrd_flash.sh --no-flash --qspi-only --boot-chain-flash ${FLASH_SLOT} -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
+        run_on_host "./l4t_initrd_flash.sh --no-flash --qspi-only --boot-chain-flash ${FLASH_SLOT} --boot-chain-select ${FLASH_SLOT} -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
 
         echo ""
         echo "==> Step 2: Flashing UEFI (slot ${FLASH_SLOT}) on THOR Host ..."
@@ -109,9 +109,9 @@ case "${FLASH_MODE}" in
     bpmp)
         PARTITION_KEY="bpmp-fw-dtb"
         echo "==> Step 1: Preparing BPMP flash (slot ${FLASH_SLOT}) on THOR Host ..."
-        echo "    Command: sudo ./l4t_initrd_flash.sh --no-flash --qspi-only --boot-chain-flash ${FLASH_SLOT} -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
+        echo "    Command: sudo ./l4t_initrd_flash.sh --no-flash --qspi-only --boot-chain-flash ${FLASH_SLOT} --boot-chain-select ${FLASH_SLOT} -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
         echo ""
-        run_on_host "./l4t_initrd_flash.sh --no-flash --qspi-only --boot-chain-flash ${FLASH_SLOT} -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
+        run_on_host "./l4t_initrd_flash.sh --no-flash --qspi-only --boot-chain-flash ${FLASH_SLOT} --boot-chain-select ${FLASH_SLOT} -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
 
         echo ""
         echo "==> Step 2: Flashing BPMP (slot ${FLASH_SLOT}) on THOR Host ..."
