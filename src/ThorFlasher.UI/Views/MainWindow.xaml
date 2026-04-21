@@ -1,0 +1,279 @@
+<Window x:Class="ThorFlasher.UI.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ThorFlasher"
+        Width="980"
+        Height="720"
+        MinWidth="860"
+        MinHeight="620"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock FontSize="26"
+                       FontWeight="SemiBold"
+                       Text="ThorFlasher" />
+            <TextBlock Margin="0,4,0,14"
+                       Foreground="#555555"
+                       Text="Select a .bin or .cap file, configure the THOR endpoints, then start the operation." />
+
+            <GroupBox Header="Target Configuration">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="160" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Margin="0,6,12,6"
+                               VerticalAlignment="Center"
+                               Text="THOR Host IP" />
+                    <TextBox Grid.Row="0"
+                             Grid.Column="1"
+                             Margin="0,4,0,4"
+                             IsEnabled="{Binding CanEditInputs}"
+                             Text="{Binding HostIp, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Margin="0,6,12,6"
+                               VerticalAlignment="Center"
+                               Text="THOR Target IP" />
+                    <TextBox Grid.Row="1"
+                             Grid.Column="1"
+                             Margin="0,4,0,4"
+                             IsEnabled="{Binding CanEditInputs}"
+                             Text="{Binding TargetIp, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Grid.Row="2"
+                               Grid.Column="0"
+                               Margin="0,6,12,6"
+                               VerticalAlignment="Center"
+                               Text="Host Credentials" />
+                    <StackPanel Grid.Row="2"
+                                Grid.Column="1"
+                                Orientation="Horizontal"
+                                Margin="0,4,0,4">
+                        <TextBox Width="160"
+                                 Margin="0,0,8,0"
+                                 IsEnabled="{Binding CanEditInputs}"
+                                 Text="{Binding HostUser, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="0,0,8,0"
+                                   Foreground="#888"
+                                   Text="/" />
+                        <TextBox Width="160"
+                                 IsEnabled="{Binding CanEditInputs}"
+                                 Text="{Binding HostPassword, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="8,0,0,0"
+                                   Foreground="#999"
+                                   Text="user / password" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="3"
+                               Grid.Column="0"
+                               Margin="0,6,12,6"
+                               VerticalAlignment="Center"
+                               Text="Target Credentials" />
+                    <StackPanel Grid.Row="3"
+                                Grid.Column="1"
+                                Orientation="Horizontal"
+                                Margin="0,4,0,4">
+                        <TextBox Width="160"
+                                 Margin="0,0,8,0"
+                                 IsEnabled="{Binding CanEditInputs}"
+                                 Text="{Binding TargetUser, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="0,0,8,0"
+                                   Foreground="#888"
+                                   Text="/" />
+                        <TextBox Width="160"
+                                 IsEnabled="{Binding CanEditInputs}"
+                                 Text="{Binding TargetPassword, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="8,0,0,0"
+                                   Foreground="#999"
+                                   Text="user / password" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="4"
+                               Grid.Column="0"
+                               Margin="0,6,12,6"
+                               VerticalAlignment="Center"
+                               Text="Firmware/Capsule File" />
+                    <Border Grid.Row="4"
+                            Grid.Column="1"
+                            Margin="0,4,0,4"
+                            Padding="8"
+                            BorderBrush="#8A99A8"
+                            BorderThickness="1.5"
+                            Background="#F7F9FB"
+                            CornerRadius="6"
+                            AllowDrop="True"
+                            PreviewDragOver="DropZone_PreviewDragOver"
+                            Drop="DropZone_Drop">
+                        <DockPanel LastChildFill="True">
+                            <TextBlock DockPanel.Dock="Top"
+                                       Margin="0,0,0,4"
+                                       Foreground="#53606D"
+                                       Text="Drag and drop one .bin or .cap file here, or use Browse." />
+                            <TextBox IsEnabled="{Binding CanEditInputs}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Text="{Binding FilePath, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                    </Border>
+                    <Button Grid.Row="4"
+                            Grid.Column="2"
+                            Margin="8,4,0,4"
+                            Command="{Binding BrowseCommand}"
+                            Content="Browse" />
+
+                    <TextBlock Grid.Row="5"
+                               Grid.Column="0"
+                               Margin="0,6,12,6"
+                               VerticalAlignment="Center"
+                               Text="Flash Mode / Slot" />
+                    <StackPanel Grid.Row="5"
+                                Grid.Column="1"
+                                Orientation="Horizontal"
+                                Margin="0,4,0,4">
+                        <ComboBox Width="130"
+                                  Margin="0,0,12,0"
+                                  IsEnabled="{Binding CanEditInputs}"
+                                  ItemsSource="{Binding FlashModeOptions}"
+                                  SelectedItem="{Binding SelectedFlashMode}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="0,0,8,0"
+                                   Foreground="#888"
+                                   Text="Slot:" />
+                        <ComboBox Width="70"
+                                  IsEnabled="{Binding IsSlotSelectionEnabled}"
+                                  ItemsSource="{Binding FlashSlotOptions}"
+                                  SelectedItem="{Binding SelectedFlashSlot}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="8,0,0,0"
+                                   Foreground="#999"
+                                   Text="(Slot applies to UEFI/BPMP only)" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="6"
+                               Grid.Column="0"
+                               Margin="0,6,12,6"
+                               VerticalAlignment="Center"
+                               Text="Selected Operation" />
+                    <TextBox Grid.Row="6"
+                             Grid.Column="1"
+                             Margin="0,4,0,4"
+                             IsReadOnly="True"
+                             Text="{Binding SelectedOperationText, Mode=OneWay}" />
+
+                    <TextBlock Grid.Row="7"
+                               Grid.Column="0"
+                               Margin="0,6,12,6"
+                               VerticalAlignment="Center"
+                               Text="Overall Status" />
+                    <Border Grid.Row="7"
+                            Grid.Column="1"
+                            Margin="0,4,0,4"
+                            Padding="8,6"
+                            Background="#F2F4F7"
+                            BorderBrush="#D6DCE5"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                        <TextBlock Text="{Binding StatusMessage}" />
+                    </Border>
+                </Grid>
+            </GroupBox>
+        </StackPanel>
+
+        <GroupBox Grid.Row="1" Header="Live Log">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBox x:Name="LogTextBox"
+                         Grid.Row="0"
+                         IsReadOnly="True"
+                         IsReadOnlyCaretVisible="True"
+                         Focusable="True"
+                         AcceptsReturn="True"
+                         AcceptsTab="True"
+                         TextWrapping="NoWrap"
+                         FontFamily="Consolas"
+                         SelectionBrush="#C9DCF8"
+                         VerticalScrollBarVisibility="Auto"
+                         HorizontalScrollBarVisibility="Auto"
+                         Text="{Binding LogText, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}"
+                         TextChanged="LogTextBox_TextChanged" />
+
+                <Border Grid.Row="1"
+                        Margin="0,10,0,0"
+                        Padding="10,8"
+                        Background="#FCE8E6"
+                        BorderBrush="#F5C2BE"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Visible" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding UnhandledErrorMessage}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding UnhandledErrorMessage}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Foreground="#8A1F11"
+                               Text="{Binding UnhandledErrorMessage}" />
+                </Border>
+            </Grid>
+        </GroupBox>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Command="{Binding SaveEnvironmentCommand}"
+                    Content="Save Environment" />
+            <Button Command="{Binding LoadEnvironmentCommand}"
+                    Content="Load Environment" />
+            <Button Command="{Binding FlashCommand}"
+                    Background="#DDF3E4"
+                    Content="Flash" />
+            <Button Command="{Binding CapsuleUpdateCommand}"
+                    Background="#E7EEF9"
+                    Content="Capsule Update" />
+            <Button Command="{Binding CancelCommand}"
+                    Background="#FCE8E6"
+                    Content="Cancel" />
+            <Button Command="{Binding CopyLogCommand}"
+                    Content="Copy Log" />
+            <Button Margin="0,0,0,0"
+                    Command="{Binding ClearLogCommand}"
+                    Content="Clear Log" />
+        </StackPanel>
+    </Grid>
+</Window>

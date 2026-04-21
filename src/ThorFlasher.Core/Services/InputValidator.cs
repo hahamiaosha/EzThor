@@ -1,0 +1,90 @@
+using System.Net;
+using ThorFlasher.Core.Models;
+
+namespace ThorFlasher.Core.Services;
+
+public sealed class InputValidator
+{
+    private readonly FileTypeResolver _fileTypeResolver;
+
+    public InputValidator(FileTypeResolver fileTypeResolver)
+    {
+        _fileTypeResolver = fileTypeResolver;
+    }
+
+    public ValidationResult Validate(OperationContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var errors = new List<string>();
+
+        var baseResult = Validate(context.HostIp, context.TargetIp, context.FilePath, context.OperationType);
+        errors.AddRange(baseResult.Errors);
+
+        if (string.IsNullOrWhiteSpace(context.HostUser))
+        {
+            errors.Add("Host user is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(context.HostPassword))
+        {
+            errors.Add("Host password is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(context.TargetUser))
+        {
+            errors.Add("Target user is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(context.TargetPassword))
+        {
+            errors.Add("Target password is required.");
+        }
+
+        return new ValidationResult(errors);
+    }
+
+    public ValidationResult Validate(string? hostIp, string? targetIp, string? filePath, OperationType operationType)
+    {
+        var errors = new List<string>();
+
+        if (!IsValidIpAddress(hostIp))
+        {
+            errors.Add("THOR Host IP must be a valid IPv4 or IPv6 address.");
+        }
+
+        if (!IsValidIpAddress(targetIp))
+        {
+            errors.Add("THOR Target IP must be a valid IPv4 or IPv6 address.");
+        }
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            errors.Add("Firmware/Capsule file path is required.");
+        }
+        else
+        {
+            if (!File.Exists(filePath))
+            {
+                errors.Add("Selected firmware/capsule file does not exist.");
+            }
+
+            if (!_fileTypeResolver.IsSupportedPackage(filePath))
+            {
+                errors.Add("Only .bin and .cap files are supported.");
+            }
+        }
+
+        if (operationType is not OperationType.Flash and not OperationType.CapsuleUpdate)
+        {
+            errors.Add("Operation type must be Flash or Capsule Update.");
+        }
+
+        return new ValidationResult(errors);
+    }
+
+    private static bool IsValidIpAddress(string? value)
+    {
+        return !string.IsNullOrWhiteSpace(value) && IPAddress.TryParse(value, out _);
+    }
+}
