@@ -33,6 +33,17 @@
 
   <!-- Include Thor_Script folder in publish output -->
   <ItemGroup>
-    <Content Include="..\..\Thor_Script\**\*" LinkBase="Thor_Script" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\Thor_Script\**\*.sh" LinkBase="Thor_Script">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="..\..\Thor_Script\**\*.sh.bak" LinkBase="Thor_Script">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Include="..\..\Thor_Script\.gitattributes" Link="Thor_Script\.gitattributes">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 </Project>
