@@ -1,3 +1,4 @@
+using System.Text;
 using ThorFlasher.Core.Interfaces;
 using ThorFlasher.Core.Models;
 using System.Text.RegularExpressions;
@@ -53,11 +54,14 @@ public sealed class ScriptConfigurationUpdater : IScriptConfigurationUpdater
         updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.TargetUserToken, "TARGET_USER", context.TargetUser, "Target user");
         updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.TargetPasswordToken, "TARGET_PASS", context.TargetPassword, "Target password");
 
+        // Normalize to LF so bash does not choke on \r
+        updatedContent = updatedContent.Replace("\r\n", "\n", StringComparison.Ordinal);
+
         var backupPath = $"{configPath}.bak";
-        await File.WriteAllTextAsync(backupPath, originalContent, token).ConfigureAwait(false);
+        await File.WriteAllBytesAsync(backupPath, Encoding.UTF8.GetBytes(originalContent.Replace("\r\n", "\n", StringComparison.Ordinal)), token).ConfigureAwait(false);
         progress.Report(CreateLog("INFO", "ScriptConfig", $"Created backup file '{backupPath}'."));
 
-        await File.WriteAllTextAsync(configPath, updatedContent, token).ConfigureAwait(false);
+        await File.WriteAllBytesAsync(configPath, Encoding.UTF8.GetBytes(updatedContent), token).ConfigureAwait(false);
         progress.Report(CreateLog("INFO", "ScriptConfig", "Script configuration update complete."));
     }
 
