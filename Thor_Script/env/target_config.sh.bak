@@ -5,7 +5,7 @@
 
 THOR_HOST_IP="10.33.76.23"
 THOR_TARGET_IP="10.33.76.128"
-SELECTED_FILE_PATH="D:\\AI_Emperor\\workspace\\data\\artifacts\\Build_Data\\L4T_38.4_Clean\\uefi_t26x_general.bin"
+SELECTED_FILE_PATH="C:\\Users\\MorganWeng翁銘禧\\Downloads\\uefi_t26x_general_DEBUG.bin"
 
 REMOTE_USER="haha"
 REMOTE_PASS="1234"
