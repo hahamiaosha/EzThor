@@ -520,7 +520,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         return Path.IsPathRooted(_thorScriptSettings.ScriptsRootPath)
             ? Path.GetFullPath(_thorScriptSettings.ScriptsRootPath)
-            : Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, _thorScriptSettings.ScriptsRootPath));
+            : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, _thorScriptSettings.ScriptsRootPath));
     }
 
     private void AddLog(string level, string stage, string message)

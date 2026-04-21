@@ -139,7 +139,7 @@ public sealed class ThorScriptResolver : IThorScriptResolver
         {
             var basePath = Path.IsPathRooted(scriptsRootPath)
                 ? scriptsRootPath
-                : Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, scriptsRootPath));
+                : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, scriptsRootPath));
 
             fullPath = Path.GetFullPath(Path.Combine(basePath, relativeScriptPath));
         }

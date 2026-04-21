@@ -69,7 +69,7 @@ public sealed class ScriptConfigurationUpdater : IScriptConfigurationUpdater
     {
         return Path.IsPathRooted(scriptsRootPath)
             ? Path.GetFullPath(scriptsRootPath)
-            : Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, scriptsRootPath));
+            : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, scriptsRootPath));
     }
 
     private static string ReplaceTokenOrAssignment(string content, string? token, string variableName, string replacement, string label)

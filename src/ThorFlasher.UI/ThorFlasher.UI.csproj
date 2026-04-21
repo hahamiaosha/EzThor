@@ -5,6 +5,10 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>ThorFlasher</AssemblyName>
     <RootNamespace>ThorFlasher.UI</RootNamespace>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,5 +27,10 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <!-- Include Thor_Script folder in publish output -->
+  <ItemGroup>
+    <Content Include="..\..\Thor_Script\**\*" LinkBase="Thor_Script" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
