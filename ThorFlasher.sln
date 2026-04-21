@@ -1,0 +1,45 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThorFlasher.Core", "src\ThorFlasher.Core\ThorFlasher.Core.csproj", "{C4E2A7F6-7D09-4C3D-98D1-19E7F2C61A21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThorFlasher.Adapters", "src\ThorFlasher.Adapters\ThorFlasher.Adapters.csproj", "{0FD93E9B-B4F7-4D22-9F29-8AF8D95A9D42}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThorFlasher.Infrastructure", "src\ThorFlasher.Infrastructure\ThorFlasher.Infrastructure.csproj", "{D6C4F0B1-3A8E-4F2A-B309-57E278F35355}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThorFlasher.UI", "src\ThorFlasher.UI\ThorFlasher.UI.csproj", "{6A5FC13F-A8D8-49CC-B34D-6E1E95F10C17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThorFlasher.Core.Tests", "tests\ThorFlasher.Core.Tests\ThorFlasher.Core.Tests.csproj", "{9EE130A0-7343-4EC9-AC20-B04B5560B47B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C4E2A7F6-7D09-4C3D-98D1-19E7F2C61A21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4E2A7F6-7D09-4C3D-98D1-19E7F2C61A21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4E2A7F6-7D09-4C3D-98D1-19E7F2C61A21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4E2A7F6-7D09-4C3D-98D1-19E7F2C61A21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FD93E9B-B4F7-4D22-9F29-8AF8D95A9D42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FD93E9B-B4F7-4D22-9F29-8AF8D95A9D42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FD93E9B-B4F7-4D22-9F29-8AF8D95A9D42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FD93E9B-B4F7-4D22-9F29-8AF8D95A9D42}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6C4F0B1-3A8E-4F2A-B309-57E278F35355}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6C4F0B1-3A8E-4F2A-B309-57E278F35355}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6C4F0B1-3A8E-4F2A-B309-57E278F35355}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6C4F0B1-3A8E-4F2A-B309-57E278F35355}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A5FC13F-A8D8-49CC-B34D-6E1E95F10C17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A5FC13F-A8D8-49CC-B34D-6E1E95F10C17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A5FC13F-A8D8-49CC-B34D-6E1E95F10C17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A5FC13F-A8D8-49CC-B34D-6E1E95F10C17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9EE130A0-7343-4EC9-AC20-B04B5560B47B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EE130A0-7343-4EC9-AC20-B04B5560B47B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EE130A0-7343-4EC9-AC20-B04B5560B47B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EE130A0-7343-4EC9-AC20-B04B5560B47B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,39 @@
+<Window x:Class="ThorFlasher.UI.Views.ProfilePickerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Load Environment"
+        Width="720"
+        Height="420"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ListView ItemsSource="{Binding Profiles}"
+                  SelectedItem="{Binding SelectedProfile}"
+                  Margin="0,0,0,16">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Profile" Width="170" DisplayMemberBinding="{Binding ProfileName}" />
+                    <GridViewColumn Header="Host IP" Width="140" DisplayMemberBinding="{Binding HostIp}" />
+                    <GridViewColumn Header="Target IP" Width="140" DisplayMemberBinding="{Binding TargetIp}" />
+                    <GridViewColumn Header="Last Operation" Width="110" DisplayMemberBinding="{Binding LastOperation}" />
+                    <GridViewColumn Header="Updated" Width="130" DisplayMemberBinding="{Binding UpdatedAt}" />
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Click="LoadButton_Click"
+                    Content="Load"
+                    IsDefault="True" />
+            <Button Margin="0,0,0,0"
+                    Content="Cancel"
+                    IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>
