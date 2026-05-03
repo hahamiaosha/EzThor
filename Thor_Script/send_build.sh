@@ -46,10 +46,23 @@ fi
 
 SRC="$(normalize_local_path "${SRC}")"
 
+SKIP_CAPSULE=false
+
 case "${SRC}" in
-    *.bin|*.BIN) ;;
+    *.bin|*.BIN)
+        # UEFI: upload .bin to uefi_bins and multi_signed (A + B cpu-bootloader), no capsule.
+        REMOTE_DIR="${REMOTE_BSP_ROOT}/bootloader/uefi_bins"
+        TARGET_NAME="uefi_t26x_general.bin"
+        SKIP_CAPSULE=true
+        ;;
+    *.dtb|*.DTB)
+        # BPMP: rename to the canonical dtb name and upload to bootloader/, skip capsule generation.
+        REMOTE_DIR="${REMOTE_BSP_ROOT}/bootloader/generic"
+        TARGET_NAME="tegra264-bpmp-3834-0008-4071-xxxx.dtb"
+        SKIP_CAPSULE=true
+        ;;
     *)
-        echo "ERROR: send_build.sh currently expects a .bin package for the upload/build flow."
+        echo "ERROR: send_build.sh supports .bin and .dtb files."
         echo "       Selected file: ${SRC}"
         exit 1
         ;;
@@ -63,41 +76,44 @@ fi
 echo "==> THOR Host: ${REMOTE_HOST}"
 echo "==> THOR Target: ${TARGET_HOST:-not used in send_build step}"
 echo "==> Sending $(basename "${SRC}") to ${REMOTE_HOST}:${REMOTE_DIR}/${TARGET_NAME} ..."
-echo "    Local build bin: ${SRC}"
-echo "    Remote UEFI bin: ${REMOTE_DIR}/${TARGET_NAME}"
+echo "    Local file: ${SRC}"
+echo "    Remote file: ${REMOTE_DIR}/${TARGET_NAME}"
 
-sshpass -p "${REMOTE_PASS}" scp ${SSH_OPTS} \
-    "${SRC}" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/${TARGET_NAME}"
+if [ "${SKIP_CAPSULE}" = true ]; then
+    # bootloader/ is root-owned; scp to /tmp first, then sudo cp to the targets.
+    REMOTE_TMP="/tmp/${TARGET_NAME}"
+    MULTI_SIGNED_DIR="${REMOTE_BSP_ROOT}/bootloader/multi_signed/3834-000-0008--1-0-jetson-agx-thor-devkit-"
+    sshpass -p "${REMOTE_PASS}" scp ${SSH_OPTS} \
+        "${SRC}" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_TMP}"
 
-echo "==> Transfer complete."
-
-echo "==> Generating capsule on ${REMOTE_HOST} ..."
-echo "    Capsule output: ${REMOTE_BSP_ROOT}/${CAPSULE_OUTPUT}"
-echo "    Capsule source: ${REMOTE_BSP_ROOT}/bootloader/payloads_t26x/bl_only_payload"
-
-sshpass -p "${REMOTE_PASS}" ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
-    "echo '${REMOTE_PASS}' | sudo -S -p '' rm -f ${REMOTE_BSP_ROOT}/${CAPSULE_OUTPUT} && \
-     echo '${REMOTE_PASS}' | sudo -S -p '' rm -rf ${REMOTE_BSP_ROOT}/bootloader/payloads_t26x && \
-     echo '${REMOTE_PASS}' | sudo -S -p '' rm -rf ${REMOTE_BSP_ROOT}/bootloader/signed && \
-     mkdir -p /tmp/pybin && ln -sf /usr/bin/python3 /tmp/pybin/python && \
-     export PATH=/tmp/pybin:\$PATH && \
-     cd ${REMOTE_BSP_ROOT} && \
-     echo '${REMOTE_PASS}' | sudo -S -p '' FAB=000 BOARDID=3834 FUSELEVEL=fuselevel_production \
-        BOARDSKU=0008 CHIP_SKU='00:00:00:A0' \
-        ./build_l4t_bup.sh jetson-agx-thor-devkit internal && \
-     ${CAPSULE_DIR}/l4t_generate_soc_capsule.sh \
-        -i bootloader/payloads_t26x/bl_only_payload \
-        -o ./${CAPSULE_OUTPUT} \
-        t264"
-
-echo "==> Remote file details:"
-sshpass -p "${REMOTE_PASS}" ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
-    "ls -l --time-style=long-iso ${REMOTE_DIR}/${TARGET_NAME} \
-        ${REMOTE_BSP_ROOT}/bootloader/payloads_t26x/bl_only_payload \
-        ${REMOTE_BSP_ROOT}/${CAPSULE_OUTPUT}"
-
-echo ""
-echo "========================================="
-echo "  send_build.sh completed successfully"
-echo "  Capsule generated: ${REMOTE_BSP_ROOT}/${CAPSULE_OUTPUT}"
-echo "========================================="
+    case "${SRC}" in
+        *.bin|*.BIN)
+            sshpass -p "${REMOTE_PASS}" ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
+                "echo '${REMOTE_PASS}' | sudo -S -p '' cp '${REMOTE_TMP}' ${REMOTE_DIR}/${TARGET_NAME} && \
+                 echo '${REMOTE_PASS}' | sudo -S -p '' cp '${REMOTE_TMP}' ${MULTI_SIGNED_DIR}/A_cpu-bootloader && \
+                 echo '${REMOTE_PASS}' | sudo -S -p '' cp '${REMOTE_TMP}' ${MULTI_SIGNED_DIR}/B_cpu-bootloader && \
+                 rm -f '${REMOTE_TMP}'"
+            echo "==> Transfer complete."
+            echo "==> Replaced ${REMOTE_DIR}/${TARGET_NAME}"
+            echo "==> Replaced ${MULTI_SIGNED_DIR}/A_cpu-bootloader"
+            echo "==> Replaced ${MULTI_SIGNED_DIR}/B_cpu-bootloader"
+            ;;
+        *.dtb|*.DTB)
+            sshpass -p "${REMOTE_PASS}" ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
+                "echo '${REMOTE_PASS}' | sudo -S -p '' cp '${REMOTE_TMP}' ${REMOTE_DIR}/${TARGET_NAME} && \
+                 echo '${REMOTE_PASS}' | sudo -S -p '' cp '${REMOTE_TMP}' ${MULTI_SIGNED_DIR}/A_bpmp-fw-dtb && \
+                 echo '${REMOTE_PASS}' | sudo -S -p '' cp '${REMOTE_TMP}' ${MULTI_SIGNED_DIR}/B_bpmp-fw-dtb && \
+                 rm -f '${REMOTE_TMP}'"
+            echo "==> Transfer complete."
+            echo "==> Replaced ${REMOTE_DIR}/${TARGET_NAME}"
+            echo "==> Replaced ${MULTI_SIGNED_DIR}/A_bpmp-fw-dtb"
+            echo "==> Replaced ${MULTI_SIGNED_DIR}/B_bpmp-fw-dtb"
+            ;;
+    esac
+    echo ""
+    echo "========================================="
+    echo "  send_build.sh completed successfully"
+    echo "  Uploaded: ${REMOTE_DIR}/${TARGET_NAME}"
+    echo "========================================="
+    exit 0
+fi

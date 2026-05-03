@@ -36,7 +36,8 @@ internal static class ShellTemplateExpander
             .Replace("{targetUser}", EscapeWindowsArgument(context.TargetUser), StringComparison.Ordinal)
             .Replace("{targetPassword}", EscapeWindowsArgument(context.TargetPassword), StringComparison.Ordinal)
             .Replace("{flashMode}", context.FlashMode.ToString().ToLowerInvariant(), StringComparison.Ordinal)
-            .Replace("{flashSlot}", context.FlashSlot.ToString(), StringComparison.Ordinal);
+            .Replace("{flashSlot}", context.FlashSlot.ToString(), StringComparison.Ordinal)
+            .Replace("{flashStorage}", context.FlashStorage == FlashStorage.Internal ? "internal" : "mmcblk0p1", StringComparison.Ordinal);
     }
 
     private static string EscapeWindowsArgument(string value)

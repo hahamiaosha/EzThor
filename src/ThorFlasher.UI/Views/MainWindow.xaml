@@ -20,7 +20,7 @@
                        Text="ThorFlasher" />
             <TextBlock Margin="0,4,0,14"
                        Foreground="#555555"
-                       Text="Select a .bin or .cap file, configure the THOR endpoints, then start the operation." />
+                       Text="Enter THOR Host IP and THOR Target IP, then start the operation. File and credential fields are optional overrides." />
 
             <GroupBox Header="Target Configuration">
                 <Grid>
@@ -66,7 +66,7 @@
                                Grid.Column="0"
                                Margin="0,6,12,6"
                                VerticalAlignment="Center"
-                               Text="Host Credentials" />
+                               Text="Host Credentials (Optional)" />
                     <StackPanel Grid.Row="2"
                                 Grid.Column="1"
                                 Orientation="Horizontal"
@@ -92,7 +92,7 @@
                                Grid.Column="0"
                                Margin="0,6,12,6"
                                VerticalAlignment="Center"
-                               Text="Target Credentials" />
+                               Text="Target Credentials (Optional)" />
                     <StackPanel Grid.Row="3"
                                 Grid.Column="1"
                                 Orientation="Horizontal"
@@ -118,7 +118,7 @@
                                Grid.Column="0"
                                Margin="0,6,12,6"
                                VerticalAlignment="Center"
-                               Text="Firmware/Capsule File" />
+                               Text="Firmware/Capsule File (Optional)" />
                     <Border Grid.Row="4"
                             Grid.Column="1"
                             Margin="0,4,0,4"
@@ -134,7 +134,7 @@
                             <TextBlock DockPanel.Dock="Top"
                                        Margin="0,0,0,4"
                                        Foreground="#53606D"
-                                       Text="Drag and drop one .bin or .cap file here, or use Browse." />
+                                       Text="Optional: drag and drop one .bin, .cap, or .dtb file here, or use Browse." />
                             <TextBox IsEnabled="{Binding CanEditInputs}"
                                      Background="Transparent"
                                      BorderThickness="0"
@@ -169,6 +169,14 @@
                                   IsEnabled="{Binding IsSlotSelectionEnabled}"
                                   ItemsSource="{Binding FlashSlotOptions}"
                                   SelectedItem="{Binding SelectedFlashSlot}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="12,0,8,0"
+                                   Foreground="#888"
+                                   Text="Storage:" />
+                        <ComboBox Width="110"
+                                  IsEnabled="{Binding CanEditInputs}"
+                                  ItemsSource="{Binding FlashStorageOptions}"
+                                  SelectedItem="{Binding SelectedFlashStorage}" />
                         <TextBlock VerticalAlignment="Center"
                                    Margin="8,0,0,0"
                                    Foreground="#999"

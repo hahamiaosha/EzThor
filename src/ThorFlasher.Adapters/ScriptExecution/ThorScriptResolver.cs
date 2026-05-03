@@ -19,6 +19,11 @@ public sealed class ThorScriptResolver : IThorScriptResolver
     {
         ArgumentNullException.ThrowIfNull(context);
 
+        if (string.IsNullOrWhiteSpace(context.FilePath))
+        {
+            return new ScriptCommandDefinition { Enabled = false };
+        }
+
         if (context.OperationType == OperationType.CapsuleUpdate && IsCapsuleFile(context.FilePath))
         {
             return new ScriptCommandDefinition { Enabled = false };

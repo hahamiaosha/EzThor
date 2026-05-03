@@ -139,6 +139,65 @@ public sealed class ScriptConfigurationUpdaterTests
         Assert.True(File.Exists($"{configPath}.bak"));
     }
 
+    [Fact]
+    public async Task ApplyIpSettingsAsync_KeepsExistingOptionalValues_WhenOverridesAreBlank()
+    {
+        var scriptsRoot = CreateTempDirectory();
+        var envDirectory = Path.Combine(scriptsRoot, "env");
+        Directory.CreateDirectory(envDirectory);
+
+        var configPath = Path.Combine(envDirectory, "target_config.sh");
+        await File.WriteAllTextAsync(
+            configPath,
+            """
+            THOR_HOST_IP="10.0.0.10"
+            THOR_TARGET_IP="10.0.0.20"
+            SELECTED_FILE_PATH="C:\\old\\fw.bin"
+            REMOTE_USER="olduser"
+            REMOTE_PASS="oldpass"
+            TARGET_USER="oldtarget"
+            TARGET_PASS="oldtpass"
+            """);
+
+        var updater = new ScriptConfigurationUpdater(new ThorScriptSettings
+        {
+            ScriptsRootPath = scriptsRoot,
+            IpConfigFileRelativePath = @"env\target_config.sh",
+            HostIpToken = "{{HOST_IP}}",
+            TargetIpToken = "{{TARGET_IP}}",
+            SelectedFileToken = "{{SELECTED_FILE_PATH}}",
+            HostUserToken = "{{HOST_USER}}",
+            HostPasswordToken = "{{HOST_PASSWORD}}",
+            TargetUserToken = "{{TARGET_USER}}",
+            TargetPasswordToken = "{{TARGET_PASSWORD}}"
+        });
+
+        var context = new OperationContext
+        {
+            HostIp = "10.0.0.1",
+            TargetIp = "10.0.0.2",
+            HostUser = string.Empty,
+            HostPassword = string.Empty,
+            TargetUser = string.Empty,
+            TargetPassword = string.Empty,
+            FilePath = string.Empty,
+            ScriptsRootPath = scriptsRoot,
+            WorkingDirectory = scriptsRoot,
+            OperationType = OperationType.Flash
+        };
+
+        await updater.ApplyIpSettingsAsync(context, new Progress<LogEntry>(), CancellationToken.None);
+
+        var updated = await File.ReadAllTextAsync(configPath);
+        Assert.Contains("THOR_HOST_IP=\"10.0.0.1\"", updated);
+        Assert.Contains("THOR_TARGET_IP=\"10.0.0.2\"", updated);
+        Assert.Contains("SELECTED_FILE_PATH=\"C:\\old\\fw.bin\"", updated);
+        Assert.Contains("REMOTE_USER=\"olduser\"", updated);
+        Assert.Contains("REMOTE_PASS=\"oldpass\"", updated);
+        Assert.Contains("TARGET_USER=\"oldtarget\"", updated);
+        Assert.Contains("TARGET_PASS=\"oldtpass\"", updated);
+    }
+
     private static string CreateTempDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));

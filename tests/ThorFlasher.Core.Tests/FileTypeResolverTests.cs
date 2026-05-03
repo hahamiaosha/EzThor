@@ -11,6 +11,8 @@ public sealed class FileTypeResolverTests
     [InlineData("firmware.BIN", true)]
     [InlineData("capsule.cap", true)]
     [InlineData("capsule.CAP", true)]
+    [InlineData("bpmp.dtb", true)]
+    [InlineData("bpmp.DTB", true)]
     [InlineData("notes.txt", false)]
     [InlineData("", false)]
     public void IsSupportedPackage_ReturnsExpectedValue(string filePath, bool expected)

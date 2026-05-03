@@ -20,20 +20,28 @@ SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 FLASH_MODE="qspi"
 FLASH_SLOT="A"
+FLASH_STORAGE="mmcblk0p1"
 
 #------------------------------------------------------------------------------
 # Parse arguments
 #------------------------------------------------------------------------------
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --mode)  FLASH_MODE="${2,,}"; shift 2 ;;
-        --slot)  FLASH_SLOT="${2^^}"; shift 2 ;;
+        --mode)    FLASH_MODE="${2,,}"; shift 2 ;;
+        --slot)    FLASH_SLOT="${2^^}"; shift 2 ;;
+        --storage) FLASH_STORAGE="${2,,}"; shift 2 ;;
         --help|-h)
-            echo "Usage: flash.sh [--mode qspi|uefi|bpmp] [--slot A|B]"
+            echo "Usage: flash.sh [--mode qspi|uefi|bpmp|internal] [--slot A|B] [--storage mmcblk0p1|internal]"
             exit 0 ;;
         *)  shift ;;
     esac
 done
+
+# Backward-compat: --mode internal == --mode qspi --storage internal
+if [[ "${FLASH_MODE}" == "internal" ]]; then
+    FLASH_MODE="qspi"
+    FLASH_STORAGE="internal"
+fi
 
 #------------------------------------------------------------------------------
 # Validate
@@ -49,12 +57,17 @@ if [ -z "${REMOTE_BSP_ROOT:-}" ]; then
 fi
 
 if [[ "${FLASH_MODE}" != "qspi" && "${FLASH_MODE}" != "uefi" && "${FLASH_MODE}" != "bpmp" ]]; then
-    echo "ERROR: Unknown flash mode '${FLASH_MODE}'. Use: qspi, uefi, bpmp"
+    echo "ERROR: Unknown flash mode '${FLASH_MODE}'. Use: qspi, uefi, bpmp, internal"
     exit 1
 fi
 
 if [[ "${FLASH_SLOT}" != "A" && "${FLASH_SLOT}" != "B" ]]; then
     echo "ERROR: Unknown flash slot '${FLASH_SLOT}'. Use: A, B"
+    exit 1
+fi
+
+if [[ "${FLASH_STORAGE}" != "mmcblk0p1" && "${FLASH_STORAGE}" != "internal" ]]; then
+    echo "ERROR: Unknown storage '${FLASH_STORAGE}'. Use: mmcblk0p1, internal"
     exit 1
 fi
 
@@ -64,6 +77,7 @@ fi
 echo "==> THOR Host: ${REMOTE_HOST}"
 echo "==> THOR Target IP: ${TARGET_HOST:-Not configured}"
 echo "==> Flash mode: ${FLASH_MODE}"
+echo "==> Storage: ${FLASH_STORAGE}"
 [[ "${FLASH_MODE}" != "qspi" ]] && echo "==> Flash slot: ${FLASH_SLOT}"
 echo "==> Remote BSP root (Linux_for_Tegra): ${REMOTE_BSP_ROOT}"
 echo ""
@@ -72,7 +86,7 @@ echo "Before flashing, manually place the THOR target into recovery mode."
 echo ""
 
 DEVICE="jetson-agx-thor-devkit"
-STORAGE="mmcblk0p1"
+STORAGE="${FLASH_STORAGE}"
 
 run_on_host() {
     sshpass -p "${REMOTE_PASS}" ssh ${SSH_OPTS} "${REMOTE_USER}@${REMOTE_HOST}" \
@@ -88,7 +102,7 @@ case "${FLASH_MODE}" in
         echo "    Command: cd ${REMOTE_BSP_ROOT} && sudo ./l4t_initrd_flash.sh --qspi-only ${DEVICE} ${STORAGE}"
         echo ""
         run_on_host "./l4t_initrd_flash.sh --qspi-only ${DEVICE} ${STORAGE}"
-        FLASH_LABEL="QSPI Flash"
+        FLASH_LABEL="QSPI Flash (${STORAGE})"
         ;;
 
     uefi)
@@ -103,7 +117,7 @@ case "${FLASH_MODE}" in
         echo "    Command: sudo ./l4t_initrd_flash.sh -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
         echo ""
         run_on_host "./l4t_initrd_flash.sh -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
-        FLASH_LABEL="UEFI Flash (Slot ${FLASH_SLOT})"
+        FLASH_LABEL="UEFI Flash (Slot ${FLASH_SLOT}, ${STORAGE})"
         ;;
 
     bpmp)
@@ -118,7 +132,7 @@ case "${FLASH_MODE}" in
         echo "    Command: sudo ./l4t_initrd_flash.sh -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
         echo ""
         run_on_host "./l4t_initrd_flash.sh -k ${FLASH_SLOT}_${PARTITION_KEY} ${DEVICE} ${STORAGE}"
-        FLASH_LABEL="BPMP Flash (Slot ${FLASH_SLOT})"
+        FLASH_LABEL="BPMP Flash (Slot ${FLASH_SLOT}, ${STORAGE})"
         ;;
 esac
 

@@ -44,15 +44,16 @@ public sealed class ScriptConfigurationUpdater : IScriptConfigurationUpdater
         updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.HostIpToken, "THOR_HOST_IP", context.HostIp, "Host IP");
         updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.TargetIpToken, "THOR_TARGET_IP", context.TargetIp, "Target IP");
 
-        if (!string.IsNullOrWhiteSpace(_thorScriptSettings.SelectedFileToken))
+        if (!string.IsNullOrWhiteSpace(context.FilePath)
+            && !string.IsNullOrWhiteSpace(_thorScriptSettings.SelectedFileToken))
         {
             updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.SelectedFileToken, "SELECTED_FILE_PATH", context.FilePath, "Selected file path");
         }
 
-        updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.HostUserToken, "REMOTE_USER", context.HostUser, "Host user");
-        updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.HostPasswordToken, "REMOTE_PASS", context.HostPassword, "Host password");
-        updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.TargetUserToken, "TARGET_USER", context.TargetUser, "Target user");
-        updatedContent = ReplaceTokenOrAssignment(updatedContent, _thorScriptSettings.TargetPasswordToken, "TARGET_PASS", context.TargetPassword, "Target password");
+        updatedContent = ReplaceOptionalTokenOrAssignment(updatedContent, _thorScriptSettings.HostUserToken, "REMOTE_USER", context.HostUser, "Host user");
+        updatedContent = ReplaceOptionalTokenOrAssignment(updatedContent, _thorScriptSettings.HostPasswordToken, "REMOTE_PASS", context.HostPassword, "Host password");
+        updatedContent = ReplaceOptionalTokenOrAssignment(updatedContent, _thorScriptSettings.TargetUserToken, "TARGET_USER", context.TargetUser, "Target user");
+        updatedContent = ReplaceOptionalTokenOrAssignment(updatedContent, _thorScriptSettings.TargetPasswordToken, "TARGET_PASS", context.TargetPassword, "Target password");
 
         // Normalize to LF so bash does not choke on \r
         updatedContent = updatedContent.Replace("\r\n", "\n", StringComparison.Ordinal);
@@ -92,6 +93,16 @@ public sealed class ScriptConfigurationUpdater : IScriptConfigurationUpdater
 
         throw new InvalidOperationException(
             $"{label} token '{token}' was not found, and assignment '{variableName}=...' was also not found in the configured script file.");
+    }
+
+    private static string ReplaceOptionalTokenOrAssignment(string content, string? token, string variableName, string? replacement, string label)
+    {
+        if (string.IsNullOrWhiteSpace(replacement))
+        {
+            return content;
+        }
+
+        return ReplaceTokenOrAssignment(content, token, variableName, replacement, label);
     }
 
     private static string? ReplaceAssignmentValue(string content, string variableName, string replacement)

@@ -20,6 +20,19 @@ public sealed class ThorScriptResolverTests
     }
 
     [Fact]
+    public void GetSendBuildCommand_ReturnsDisabled_WhenFilePathIsMissing()
+    {
+        var scriptsRoot = CreateScriptsRoot();
+        var resolver = CreateResolver(scriptsRoot);
+        var context = CreateContext(OperationType.Flash, scriptsRoot);
+        context.FilePath = string.Empty;
+
+        var command = resolver.GetSendBuildCommand(context);
+
+        Assert.False(command.Enabled);
+    }
+
+    [Fact]
     public void GetSendBuildCommand_UsesBashFriendlyScriptPath_ForBashExe()
     {
         var scriptsRoot = CreateScriptsRoot();

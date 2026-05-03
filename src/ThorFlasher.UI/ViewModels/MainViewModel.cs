@@ -35,11 +35,12 @@ public sealed class MainViewModel : ViewModelBase
     private string _logText = string.Empty;
     private string _currentProfileName = string.Empty;
     private bool _isRunning;
-    private ValidationResult _validationResult = ValidationResult.Failure("Enter THOR Host IP, THOR Target IP, and a valid file.");
+    private ValidationResult _validationResult = ValidationResult.Failure("Enter THOR Host IP and THOR Target IP.");
     private CancellationTokenSource? _currentOperationCts;
     private OperationType _lastSelectedOperation = OperationType.None;
     private FlashMode _selectedFlashMode = FlashMode.Qspi;
     private FlashSlot _selectedFlashSlot = FlashSlot.A;
+    private FlashStorage _selectedFlashStorage = FlashStorage.External;
 
     public MainViewModel(
         FileTypeResolver fileTypeResolver,
@@ -157,6 +158,8 @@ public sealed class MainViewModel : ViewModelBase
 
     public FlashSlot[] FlashSlotOptions { get; } = [FlashSlot.A, FlashSlot.B];
 
+    public FlashStorage[] FlashStorageOptions { get; } = [FlashStorage.External, FlashStorage.Internal];
+
     public FlashMode SelectedFlashMode
     {
         get => _selectedFlashMode;
@@ -173,6 +176,12 @@ public sealed class MainViewModel : ViewModelBase
     {
         get => _selectedFlashSlot;
         set => SetProperty(ref _selectedFlashSlot, value);
+    }
+
+    public FlashStorage SelectedFlashStorage
+    {
+        get => _selectedFlashStorage;
+        set => SetProperty(ref _selectedFlashStorage, value);
     }
 
     public bool IsSlotSelectionEnabled => SelectedFlashMode is not FlashMode.Qspi;
@@ -248,7 +257,7 @@ public sealed class MainViewModel : ViewModelBase
     {
         if (!IsSupportedFile(filePath))
         {
-            StatusMessage = "Only .bin and .cap files can be dropped here.";
+            StatusMessage = "Only .bin, .cap, and .dtb files can be dropped here.";
             AddLog("WARN", "UI", $"Rejected dropped file '{filePath}'.");
             return;
         }
@@ -302,6 +311,7 @@ public sealed class MainViewModel : ViewModelBase
             LastOperation = _lastSelectedOperation,
             LastFlashMode = SelectedFlashMode,
             LastFlashSlot = SelectedFlashSlot,
+            LastFlashStorage = SelectedFlashStorage,
             UpdatedAt = DateTime.UtcNow
         };
 
@@ -338,6 +348,7 @@ public sealed class MainViewModel : ViewModelBase
         FilePath = loadedProfile.LastFilePath;
         SelectedFlashMode = loadedProfile.LastFlashMode;
         SelectedFlashSlot = loadedProfile.LastFlashSlot;
+        SelectedFlashStorage = loadedProfile.LastFlashStorage;
         SelectedOperationText = GetOperationDisplayText(loadedProfile.LastOperation);
 
         AddLog("INFO", "Profiles", $"Loaded environment profile '{loadedProfile.ProfileName}'.");
@@ -367,7 +378,8 @@ public sealed class MainViewModel : ViewModelBase
         _currentOperationCts = new CancellationTokenSource();
 
         AddLog("INFO", "Validation", "------------------------------------------------------------");
-        AddLog("INFO", "Validation", $"Starting {SelectedOperationText} workflow for '{FilePath.Trim()}'.");
+        AddLog("INFO", "Validation", $"Firmware file: {FilePath.Trim()}");
+        AddLog("INFO", "Validation", BuildOperationStartMessage());
 
         try
         {
@@ -404,6 +416,7 @@ public sealed class MainViewModel : ViewModelBase
         }
         finally
         {
+            SaveLogToProjectFolder(SelectedOperationText.Replace(" ", ""));
             _currentOperationCts?.Dispose();
             _currentOperationCts = null;
             IsRunning = false;
@@ -443,6 +456,7 @@ public sealed class MainViewModel : ViewModelBase
             OperationType = operationType,
             FlashMode = SelectedFlashMode,
             FlashSlot = SelectedFlashSlot,
+            FlashStorage = SelectedFlashStorage,
             ScriptsRootPath = _thorScriptSettings.ScriptsRootPath,
             WorkingDirectory = DetermineScriptsWorkingDirectory()
         };
@@ -514,6 +528,16 @@ public sealed class MainViewModel : ViewModelBase
             OperationType.CapsuleUpdate => "Capsule Update",
             _ => "Not started"
         };
+    }
+
+    private string BuildOperationStartMessage()
+    {
+        if (string.IsNullOrWhiteSpace(FilePath))
+        {
+            return $"Starting {SelectedOperationText} workflow using script-side defaults for target '{TargetIp.Trim()}'.";
+        }
+
+        return $"Starting {SelectedOperationText} workflow for '{FilePath.Trim()}'.";
     }
 
     private string DetermineScriptsWorkingDirectory()
@@ -588,5 +612,26 @@ public sealed class MainViewModel : ViewModelBase
 
         _clipboardService.SetText(LogText);
         StatusMessage = "Log copied to clipboard";
+    }
+
+    private void SaveLogToProjectFolder(string operationName)
+    {
+        try
+        {
+            var logsFolder = Path.Combine(AppContext.BaseDirectory, "Logs");
+            Directory.CreateDirectory(logsFolder);
+
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss");
+            var fileName = $"{operationName}_{timestamp}.log";
+            var filePath = Path.Combine(logsFolder, fileName);
+
+            File.WriteAllText(filePath, LogText);
+
+            AddLog("INFO", "Completion", $"Log saved to: {filePath}");
+        }
+        catch (Exception ex)
+        {
+            AddLog("WARN", "Completion", $"Failed to save log file: {ex.Message}");
+        }
     }
 }

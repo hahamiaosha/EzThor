@@ -16,32 +16,7 @@ public sealed class InputValidator
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var errors = new List<string>();
-
-        var baseResult = Validate(context.HostIp, context.TargetIp, context.FilePath, context.OperationType);
-        errors.AddRange(baseResult.Errors);
-
-        if (string.IsNullOrWhiteSpace(context.HostUser))
-        {
-            errors.Add("Host user is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(context.HostPassword))
-        {
-            errors.Add("Host password is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(context.TargetUser))
-        {
-            errors.Add("Target user is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(context.TargetPassword))
-        {
-            errors.Add("Target password is required.");
-        }
-
-        return new ValidationResult(errors);
+        return Validate(context.HostIp, context.TargetIp, context.FilePath, context.OperationType);
     }
 
     public ValidationResult Validate(string? hostIp, string? targetIp, string? filePath, OperationType operationType)
@@ -58,11 +33,7 @@ public sealed class InputValidator
             errors.Add("THOR Target IP must be a valid IPv4 or IPv6 address.");
         }
 
-        if (string.IsNullOrWhiteSpace(filePath))
-        {
-            errors.Add("Firmware/Capsule file path is required.");
-        }
-        else
+        if (!string.IsNullOrWhiteSpace(filePath))
         {
             if (!File.Exists(filePath))
             {
@@ -71,7 +42,7 @@ public sealed class InputValidator
 
             if (!_fileTypeResolver.IsSupportedPackage(filePath))
             {
-                errors.Add("Only .bin and .cap files are supported.");
+                errors.Add("Only .bin, .cap, and .dtb files are supported.");
             }
         }
 

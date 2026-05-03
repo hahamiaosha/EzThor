@@ -11,7 +11,7 @@ public sealed class FileTypeResolver
             return false;
         }
 
-        return GetNormalizedExtension(filePath) is ".bin" or ".cap";
+        return GetNormalizedExtension(filePath) is ".bin" or ".cap" or ".dtb";
     }
 
     public string GetNormalizedExtension(string? filePath)

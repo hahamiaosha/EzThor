@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using ThorFlasher.UI.ViewModels;
 
@@ -10,7 +12,28 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = viewModel;
+        Loaded += MainWindow_Loaded;
     }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Allow drag-and-drop even when the app is running elevated.
+        EnableDragDropForElevatedProcess();
+    }
+
+    private void EnableDragDropForElevatedProcess()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero) return;
+
+        // WM_DROPFILES = 0x0233, WM_COPYDATA = 0x004A, WM_COPYGLOBALDATA = 0x0049
+        ChangeWindowMessageFilterEx(hwnd, 0x0233, 1 /* MSGFLT_ALLOW */, IntPtr.Zero);
+        ChangeWindowMessageFilterEx(hwnd, 0x004A, 1, IntPtr.Zero);
+        ChangeWindowMessageFilterEx(hwnd, 0x0049, 1, IntPtr.Zero);
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool ChangeWindowMessageFilterEx(IntPtr hwnd, uint message, uint action, IntPtr changeInfo);
 
     private MainViewModel ViewModel => (MainViewModel)DataContext;
 

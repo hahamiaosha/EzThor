@@ -9,6 +9,7 @@
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,17 +34,20 @@
 
   <!-- Include Thor_Script folder in publish output -->
   <ItemGroup>
-    <None Include="..\..\Thor_Script\**\*.sh" LinkBase="Thor_Script">
+    <Content Include="..\..\Thor_Script\**\*.sh" LinkBase="Thor_Script">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
-    <None Include="..\..\Thor_Script\**\*.sh.bak" LinkBase="Thor_Script">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Include="..\..\Thor_Script\**\*.sh.bak" LinkBase="Thor_Script">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
-    <None Include="..\..\Thor_Script\.gitattributes" Link="Thor_Script\.gitattributes">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Include="..\..\Thor_Script\.gitattributes" Link="Thor_Script\.gitattributes">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
   </ItemGroup>
 </Project>

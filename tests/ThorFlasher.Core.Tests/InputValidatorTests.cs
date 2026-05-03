@@ -28,6 +28,15 @@ public sealed class InputValidatorTests
     }
 
     [Fact]
+    public void Validate_ReturnsSuccess_WhenFileIsOmitted()
+    {
+        var result = _validator.Validate("192.168.1.10", "192.168.1.20", string.Empty, OperationType.Flash);
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
     public void Validate_ReturnsFailure_WhenHostIpIsInvalid()
     {
         var path = CreateTempFile(".bin");
@@ -82,7 +91,7 @@ public sealed class InputValidatorTests
             var result = _validator.Validate("192.168.1.10", "192.168.1.20", path, OperationType.Flash);
 
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, error => error.Contains(".bin and .cap", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(result.Errors, error => error.Contains(".bin, .cap, and .dtb", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {

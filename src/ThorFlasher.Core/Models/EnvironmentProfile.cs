@@ -20,5 +20,7 @@ public sealed class EnvironmentProfile
 
     public FlashSlot LastFlashSlot { get; set; }
 
+    public FlashStorage LastFlashStorage { get; set; }
+
     public DateTime UpdatedAt { get; set; }
 }

@@ -16,7 +16,9 @@ public sealed class UserDialogService : IUserDialogService
             _ => "Unknown Operation"
         };
 
-        var message = $"You are about to upload {filePath} to target {targetIp} and run {operationName}. Continue?";
+        var message = string.IsNullOrWhiteSpace(filePath)
+            ? $"You are about to run {operationName} on target {targetIp} using the script-side defaults. Continue?"
+            : $"You are about to use '{filePath}' for target {targetIp} and run {operationName}. Continue?";
         return ShowMessageBox(message, "Confirm Operation", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
     }
 

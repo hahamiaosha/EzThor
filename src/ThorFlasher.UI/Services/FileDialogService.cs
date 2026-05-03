@@ -8,8 +8,8 @@ public sealed class FileDialogService : IFileDialogService
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Select Firmware or Capsule File",
-            Filter = "Firmware or Capsule (*.bin;*.cap)|*.bin;*.cap|Binary Images (*.bin)|*.bin|Capsule Files (*.cap)|*.cap",
+            Title = "Select Firmware, Capsule, or DTB File",
+            Filter = "Firmware, Capsule, or DTB (*.bin;*.cap;*.dtb)|*.bin;*.cap;*.dtb|Binary Images (*.bin)|*.bin|Capsule Files (*.cap)|*.cap|DTB Files (*.dtb)|*.dtb",
             Multiselect = false,
             CheckFileExists = true,
             CheckPathExists = true

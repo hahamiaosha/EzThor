@@ -22,6 +22,8 @@ public sealed class OperationContext
 
     public FlashSlot FlashSlot { get; set; }
 
+    public FlashStorage FlashStorage { get; set; }
+
     public string ScriptsRootPath { get; set; } = string.Empty;
 
     public string WorkingDirectory { get; set; } = string.Empty;
